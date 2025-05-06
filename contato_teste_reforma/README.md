@@ -2,7 +2,7 @@ Reforma do script de execução e leitura do Contato
 
 cd até essa pasta e execute:
 
-python . {porta COM da base} repertorio/descontato/jessica_e.json
+python . {porta COM da base} repertorio/descontato_e.json
 
 Feats:  Limpeza e performance (sistema de flags, class, etc.)  
         modo legato  
