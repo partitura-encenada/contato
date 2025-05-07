@@ -140,7 +140,7 @@ async def main(args: argparse.Namespace):
     with open(args.config_path) as jsonfile:
         player.config = json.load(jsonfile)
     player.midiout = rtmidi.MidiOut()
-    player.midiout.open_port(1)
+    player.midiout.open_port(player.config.get('midiout_port'))
     print('Scan')
 
     if args.address:
