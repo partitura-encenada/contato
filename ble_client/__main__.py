@@ -20,6 +20,7 @@ class Player:
         # Sistema de flag assegura que condicionais só executem em mudanças de estado
         self.touch_flag = False
         self.accel_flag = False
+        self.pianissimo_flag = False
 
         self.last_gyro_notes_list = []
         self.last_accel_trigger_time = 0
@@ -33,11 +34,11 @@ class Player:
                         midi_codes.append( note[1] * len(self.tones) + i) # 3 * 12 + 0
         return midi_codes # [36, 40, 43]
     
-    def play_notes(self, device, note_codes_list, pianissimo = False):
+    def play_notes(self, device, note_codes_list):
         for note_code in note_codes_list: # [36, 40, 43] 
             match device:
                 case 'gyro':
-                    if pianissimo:
+                    if self.pianissimo_flag:
                         print('pianissimo')
                         self.midiout.send_message([144, 
                                                 note_code, # 36
@@ -91,10 +92,10 @@ class Player:
                 if self.config.get('legato'):
                     self.stop_notes('gyro', self.last_gyro_notes_list)
                 if touch == 2:
-                    self.play_notes('gyro', current_notes, True) # pianissimo = True
+                    self.pianissimo_flag = True
                 else:
-                    self.play_notes('gyro', current_notes)
-
+                    self.pianissimo_flag = False
+                self.play_notes('gyro', current_notes)
                 self.touch_flag = True 
     
             # Decorrer do toque
