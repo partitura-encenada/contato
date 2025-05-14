@@ -6,13 +6,15 @@ import sys
 import json
 
 class Player:
-    def __init__(self, midiout, config):
-        self.midiout = midiout
-        self.config = config
+    def __init__(self):
+        self.config = None
+        self.gyro_midiout = rtmidi.MidiOut().open_port(1)
+        self.accel_midiout = rtmidi.MidiOut().open_port(2)
 
         # Sistema de flag assegura que condicionais só executem em mudanças de estado
-        self.touch_flag = False 
+        self.touch_flag = False
         self.accel_flag = False
+        self.pianissimo_flag = False
 
         self.last_gyro_notes_list = []
         self.last_accel_trigger_time = 0
@@ -25,57 +27,58 @@ class Player:
                     if self.tones[i] == note[0]: # if 'C' == 'C' 
                         midi_codes.append( note[1] * len(self.tones) + i) # 3 * 12 + 0
         return midi_codes # [36, 40, 43]
-                
-    def play_notes(self, device, note_codes_list, pianissimo = False):
+    
+    def play_notes(self, device, note_codes_list):
         for note_code in note_codes_list: # [36, 40, 43] 
             match device:
                 case 'gyro':
-                    if pianissimo:
-                        # print('pianissimo')
-                        self.midiout.send_message([144, 
+                    if self.pianissimo_flag:
+                        print('pianissimo')
+                        self.gyro_midiout.send_message([143 + self.config.get('midiout_port'), 
                                                 note_code, # 36
                                                 32])
                     else:
-                        self.midiout.send_message([144, 
+                        self.gyro_midiout.send_message([143 + self.config.get('midiout_port'), 
                                     note_code, # 36
                                     127])
                     self.last_gyro_notes_list = note_codes_list
                 case 'accel':
-                    self.midiout.send_message([145, 
+                    self.accel_midiout.send_message([143 + self.config.get('midiout_port'), 
                                     note_code, # 36
                                     100])
-        # print(f'Tocando {note_codes_list}')
+        print(f'Tocando {note_codes_list}')
     
     def stop_notes(self, device, note_codes_list):
         for note_code in note_codes_list: # [36, 40, 43]
             match device:
                 case 'gyro':
-                    self.midiout.send_message([128, 
+                    self.gyro_midiout.send_message([127 + self.config.get('midiout_port'), 
                                         note_code, # 36
                                         100])
                     self.last_gyro_notes_list = note_codes_list
                 case 'accel':
-                    self.midiout.send_message([129, 
+                    self.accel_midiout.send_message([127 + self.config.get('midiout_port'), 
                                         note_code, # 36
                                         100])        
-        # print(f'Parando {note_codes_list}')  
+        print(f'Parando {note_codes_list}')  
 
     def set_gyro(self, gyro):
         self.gyro = gyro
 
     def set_touch(self, touch):
+        if(not self.set_gyro):
+            return
         self.touch = touch
-
         # Notas atuais
-        current_notes = [] 
-        for notes in self.config.get('angle_notes_list'): # EXEMPLO: notes = [0, [['C', 3], ['E', 3], ['G', 3]]]
+        current_notes = []
+        for notes in self.config.get('angle_notes_list'): # [0, [['C', 3], ['E', 3], ['G', 3]]]
             notes_list = notes[1] 
             if self.gyro <= notes[0]: # TODO: testar limite infinito das notas
                 break
 
         current_notes = self.convert_to_midi_codes(notes_list) 
         # current_notes == [36, 40, 43]
-  
+
         if touch: 
             # Início do toque
             if not self.touch_flag:
@@ -83,21 +86,21 @@ class Player:
                 if self.config.get('legato'):
                     self.stop_notes('gyro', self.last_gyro_notes_list)
                 if touch == 2:
-                    self.play_notes('gyro', current_notes, True) # pianissimo = True
+                    self.pianissimo_flag = True
                 else:
-                    self.play_notes('gyro', current_notes)
-
+                    self.pianissimo_flag = False
+                self.play_notes('gyro', current_notes)
                 self.touch_flag = True 
     
             # Decorrer do toque
             if current_notes != self.last_gyro_notes_list:
-                # print('Trocando de nota')
+                print('Trocando de nota')
                 self.stop_notes('gyro', self.last_gyro_notes_list)
                 self.play_notes('gyro', current_notes)
         else:
             # Liberação do toque
             if self.touch_flag:
-                # print('Liberando toque')
+                print('Liberando toque')
                 if not self.config.get('legato'): 
                     self.stop_notes('gyro', self.last_gyro_notes_list)
                 self.touch_flag = False
@@ -114,7 +117,7 @@ class Player:
             
             elif self.accel_flag:
                 self.stop_notes('accel', self.convert_to_midi_codes(self.config.get('accel_notes')))
-                self.accel_flag = False    
+                self.accel_flag = False 
 
 def main():
     if len(sys.argv) > 2:
@@ -125,14 +128,12 @@ def main():
         config = json.load(jsonfile)
 
     rtmidi.midiutil.list_output_ports()
-    midiout = rtmidi.MidiOut()
-    midiout.open_port(config.get('midiout_port'))
     serial_port = serial.Serial(port = com_port, 
                                 baudrate=115200, 
                                 bytesize=8, 
                                 timeout=2, 
                                 stopbits=serial.STOPBITS_ONE)
-    player = Player(midiout, config)
+    player = Player(config)
 
     while(1):
         if(serial_port.in_waiting > 0):

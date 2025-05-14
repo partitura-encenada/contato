@@ -14,8 +14,9 @@ ACCEL_CHARACTERISTIC_UUID = 'f62094cf-21a7-4f71-bb3f-5a5b17bb134e'
 
 class Player:
     def __init__(self):
-        self.midiout = None
         self.config = None
+        self.gyro_midiout = rtmidi.MidiOut().open_port(1)
+        self.accel_midiout = rtmidi.MidiOut().open_port(2)
 
         # Sistema de flag assegura que condicionais só executem em mudanças de estado
         self.touch_flag = False
@@ -40,16 +41,16 @@ class Player:
                 case 'gyro':
                     if self.pianissimo_flag:
                         print('pianissimo')
-                        self.midiout.send_message([144, 
+                        self.gyro_midiout.send_message([143 + self.config.get('midiout_port'), 
                                                 note_code, # 36
                                                 32])
                     else:
-                        self.midiout.send_message([144, 
+                        self.gyro_midiout.send_message([143 + self.config.get('midiout_port'), 
                                     note_code, # 36
                                     127])
                     self.last_gyro_notes_list = note_codes_list
                 case 'accel':
-                    self.midiout.send_message([145, 
+                    self.accel_midiout.send_message([143 + self.config.get('midiout_port'), 
                                     note_code, # 36
                                     100])
         print(f'Tocando {note_codes_list}')
@@ -58,12 +59,12 @@ class Player:
         for note_code in note_codes_list: # [36, 40, 43]
             match device:
                 case 'gyro':
-                    self.midiout.send_message([128, 
+                    self.gyro_midiout.send_message([127 + self.config.get('midiout_port'), 
                                         note_code, # 36
                                         100])
                     self.last_gyro_notes_list = note_codes_list
                 case 'accel':
-                    self.midiout.send_message([129, 
+                    self.accel_midiout.send_message([127 + self.config.get('midiout_port'), 
                                         note_code, # 36
                                         100])        
         print(f'Parando {note_codes_list}')  
@@ -129,7 +130,7 @@ player = Player()
 
 def gyro_notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray):
     player.set_gyro(int.from_bytes(data, 'little', signed=True))
-
+    
 def accel_notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray):
     player.set_accel(int.from_bytes(data, 'little', signed=True))
 
@@ -140,8 +141,6 @@ def touch_notification_handler(characteristic: BleakGATTCharacteristic, data: by
 async def main(args: argparse.Namespace):
     with open(args.config_path) as jsonfile:
         player.config = json.load(jsonfile)
-    player.midiout = rtmidi.MidiOut()
-    player.midiout.open_port(player.config.get('midiout_port'))
     print('Scan')
 
     if args.address:
