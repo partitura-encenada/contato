@@ -38,7 +38,7 @@ class Player:
     def play_notes(self, device, note_codes_list):
         for note_code in note_codes_list: # [36, 40, 43] 
             match device:
-                case 'gyro':
+                case 'gyro':    
                     if self.pianissimo_flag:
                         print('pianissimo')
                         self.gyro_midiout.send_message([143 + self.config.get('midiout_port'), 
