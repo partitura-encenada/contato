@@ -1,5 +1,5 @@
 {
-    "midiout_port" : 7,
+    "midiout_port" : 6,
     "legato" : false,
     "hand" : -1,
     "angle_notes_list": [
