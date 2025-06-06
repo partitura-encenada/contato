@@ -1,14 +1,14 @@
 {
-    "midiout_port" : 4,
+    "midiout_port" : 5,
     "legato" : false,
-    "hand" : 1,
+    "hand" : -1,
     "angle_notes_list": [
-        [-51, [["G", 6]]],
-        [0, [["A", 6]]],
-        [51, [["B", 6]]],
-        [180, [["D", 7]]]
+        [-52, [["D#", 4]]],
+        [0, [["F", 4]]],
+        [52, [["G#", 4]]],
+        [180, [["B", 4]]]
     ],  
-    "accel_notes":[["A", 4]],
+    "accel_notes":[["F#", 2]],
     "accel_delay": 3,                      
     "accel_sensitivity_+": 12000,  
     "accel_sensitivity_-": 12000,
