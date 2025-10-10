@@ -49,7 +49,7 @@ while(1):
         sensorData = (serialString.decode('utf-8')).split('/')
 
         id = float(sensorData[0])
-        gyro = float(sensorData[1]) 
+        gyro = float(sensorData[1]) * -1
         accel = float(sensorData[2])
         touch = float(sensorData[3])
         print(int(id), 'gyro:', gyro, 'acc:', accel, 't:', int(touch))
@@ -67,8 +67,10 @@ while(1):
         note = ('a',mapNotas["F5"])
     elif(-79 >= gyro >= -129):
         note = ('a',mapNotas["E5"])
-    elif(-130 >= gyro >= -180):
-        note = ('a',mapNotas["D5"])  
+    elif(-130 >= gyro >= -170):
+        note = ('a',mapNotas["D5"])
+    elif(-170 >= gyro >= -180):
+        note = ('a',mapNotas["C5"])  
   
     
     can = (note == last_note) and (time.time() - lastDebounceTime > 0.1)
