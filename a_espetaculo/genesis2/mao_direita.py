@@ -13,7 +13,7 @@ serialString = ''
 
 midiout = rtmidi.MidiOut()
 print(midiout.get_ports())
-port = midiout.open_port(4)
+port = midiout.open_port(3)
 
 with open('mapNotas.json') as jsonfile:
       mapNotas = json.load(jsonfile)
@@ -46,13 +46,17 @@ while(1):
 
     if(serialPort.in_waiting > 0):
         serialString = serialPort.readline()
-        sensorData = (serialString.decode('utf-8')).split('/')
-
-        id = float(sensorData[0])
-        gyro = float(sensorData[1]) * -1
-        accel = float(sensorData[2])
-        touch = float(sensorData[3])
-        print(int(id), 'gyro:', gyro, 'acc:', accel, 't:', int(touch))
+        try:
+            sensorData = (serialString.decode('utf-8')).split('/')
+            if len(sensorData) < 4:
+                continue
+            id = float(sensorData[0])
+            gyro = float(sensorData[1]) * -1
+            accel = float(sensorData[2])
+            touch = float(sensorData[3])
+            print(int(id), 'gyro:', gyro, 'acc:', accel, 't:', int(touch))
+        except (ValueError, IndexError):
+            continue
 
 
     if(180 >= gyro >= 126):
